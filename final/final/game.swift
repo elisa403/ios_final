@@ -235,7 +235,7 @@ struct game: View {
                             VStack{
                                 Button(action: {
                                     if(settings.sound == 0){
-                                        AVPlayer.sharedbubuPlayer.playFromStart()
+                                        AVPlayer.sharedpaiPlayer.playFromStart()
                                     }
                                     
                                     now.losePlayer += [settings.index]
