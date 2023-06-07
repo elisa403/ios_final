@@ -15,32 +15,7 @@ struct register: View {
     @EnvironmentObject var settings : UserSettings
     @Binding var goRegister:Bool
     @Binding var log:Bool
-    @State var str = ""
-    @State var changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
-    @State var em = ""
-    @State var pass = ""
-    @State var name = ""
-    @State var showAlert  = false
-    @State var regiSuccess = false
-    @State var renew  = false
-    @State var retrungame = false
-    @State var abcc = loUserSettings()
-    
-    func loadSet(){
-        guard !loSettings.isEmpty else { return }
-        do {
-        abcc = try JSONDecoder().decode(loUserSettings.self, from: loSettings)
-        } catch {
-        print(error)
-        }
-    }
-    func saveSet(){
-        do {
-        loSettings = try JSONEncoder().encode(abcc)
-        } catch {
-        print(error)
-        }
-    }
+    @State private var viewModel = registerViewModel()
     
     var body: some View {
         ZStack{
@@ -51,13 +26,13 @@ struct register: View {
                 Text(settings.lang == 0 ? "Register" : "註冊")
                     .font(.title)
                     .bold()
-                TextField(settings.lang == 0 ? "Nickname" : "暱稱", text: $name)
+                TextField(settings.lang == 0 ? "Nickname" : "暱稱", text: $viewModel.name)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
-                TextField("e-mail", text: $em)
+                TextField("e-mail", text: $viewModel.em)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
-                TextField(settings.lang == 0 ? "Password" : "密碼", text: $pass)
+                TextField(settings.lang == 0 ? "Password" : "密碼", text: $viewModel.pass)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
                 HStack{
@@ -65,36 +40,36 @@ struct register: View {
                         goRegister = false
                     }
                     Button(settings.lang == 0 ? "Register" : "註冊"){
-                        Auth.auth().createUser(withEmail: em, password: pass){result,error in
+                        Auth.auth().createUser(withEmail: viewModel.em, password: viewModel.pass){result,error in
                             guard let user = result?.user,
                                   error == nil else{
-                                showAlert.toggle()
-                                regiSuccess = false
+                                viewModel.showAlert.toggle()
+                                viewModel.regiSuccess = false
                                 return
                             }
                             if let user = Auth.auth().currentUser {
-                                settings.name = name
-                                settings.email = em
-                                settings.password = pass
+                                settings.name = viewModel.name
+                                settings.email = viewModel.em
+                                settings.password = viewModel.pass
                                 
-                                abcc.name = name
-                                abcc.email = em
-                                abcc.password = pass
-                                abcc.score = 0
-                                abcc.bgm = settings.bgm
+                                viewModel.abcc.name = viewModel.name
+                                viewModel.abcc.email = viewModel.em
+                                viewModel.abcc.password = viewModel.pass
+                                viewModel.abcc.score = 0
+                                viewModel.abcc.bgm = settings.bgm
                                 
-                                changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
-                                changeRequest?.displayName = name
+                                viewModel.changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
+                                viewModel.changeRequest?.displayName = viewModel.name
     //                            changeRequest?.hashValue = settings.score
-                                changeRequest?.commitChanges(completion: { error in
+                                viewModel.changeRequest?.commitChanges(completion: { error in
                                     guard error == nil else {
-                                        showAlert.toggle()
-                                        regiSuccess = false
+                                        viewModel.showAlert.toggle()
+                                        viewModel.regiSuccess = false
     //                                    print(error?.localizedDescription)
                                         return
                                     }
                                     
-                                    saveSet()
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
                                     
                                     let db = Firestore.firestore()
                                         let documentReference =
@@ -107,7 +82,7 @@ struct register: View {
                                             return
                                         }
                                         
-                                        abc.rank += [abcc]
+                                        abc.rank += [viewModel.abcc]
                                         abc.rank.sort { $0.score > $1.score }
                                         do {
                                             try documentReference.setData(from: abc)
@@ -115,20 +90,20 @@ struct register: View {
                                             print(error)
                                         }
                                     }
-                                    showAlert.toggle()
-                                    regiSuccess = true
+                                    viewModel.showAlert.toggle()
+                                    viewModel.regiSuccess = true
                                     log = true
     //                                print("\(user.displayName) login")
                                 })
                             } else {
-                                showAlert.toggle()
-                                regiSuccess = false
+                                viewModel.showAlert.toggle()
+                                viewModel.regiSuccess = false
                             }
                         }
                     }
-                    .alert(isPresented: $showAlert) {
+                    .alert(isPresented: $viewModel.showAlert) {
                         Alert(
-                            title: Text(regiSuccess ? "註冊成功！" : "信息錯誤！"),
+                            title: Text(viewModel.regiSuccess ? "註冊成功！" : "信息錯誤！"),
                             dismissButton: .cancel(Text("確認")) {goRegister.toggle()}
                         )
                     }
@@ -139,7 +114,12 @@ struct register: View {
             .background(Color.white)
             .cornerRadius(30)
             .onAppear{
-                loadSet()
+                guard !loSettings.isEmpty else { return }
+                do {
+                    viewModel.abcc = try JSONDecoder().decode(loUserSettings.self, from: loSettings)
+                } catch {
+                print(error)
+                }
             }
         }
     }

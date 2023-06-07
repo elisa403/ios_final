@@ -15,21 +15,7 @@ struct login: View {
     @EnvironmentObject var settings : UserSettings
     @Binding var goLogin:Bool
     @Binding var log:Bool
-    @State var retrungame = false
-    @State var em = ""
-    @State var pass = ""
-    @State var showAlert = false
-    @State var loginSuccess = false
-    @State var changeRequest = Auth.auth().currentUser?.createProfileChangeRequest()
-    @State var abcc = loUserSettings()
-    
-    func saveSet(){
-        do {
-        loSettings = try JSONEncoder().encode(abcc)
-        } catch {
-        print(error)
-        }
-    }
+    @State private var viewModel = loginViewModel()
     
     var body: some View {
         ZStack{
@@ -40,10 +26,10 @@ struct login: View {
                 Text("登入")
                     .font(.title)
                     .bold()
-                TextField("e-mail", text: $em)
+                TextField("e-mail", text: $viewModel.em)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
-                SecureField("密碼", text: $pass)
+                SecureField("密碼", text: $viewModel.pass)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
                 HStack{
@@ -51,15 +37,15 @@ struct login: View {
                         goLogin = false
                     }
                     Button("登入"){
-                        Auth.auth().signIn(withEmail: em, password: pass){result,error in
+                        Auth.auth().signIn(withEmail: viewModel.em, password: viewModel.pass){result,error in
                             guard error == nil else{
-                                showAlert.toggle()
+                                viewModel.showAlert.toggle()
                                 return
                             }
                             if let user = Auth.auth().currentUser{
                                 settings.name = user.displayName!
-                                settings.email = em
-                                settings.password = pass
+                                settings.email = viewModel.em
+                                settings.password = viewModel.pass
                             }
                             
                             let db = Firestore.firestore()
@@ -73,28 +59,28 @@ struct login: View {
                                     return
                                 }
                                 
-                                if let index = abc.rank.firstIndex(where: { $0.email == em }) {
+                                if let index = abc.rank.firstIndex(where: { $0.email == viewModel.em }) {
     //                                    print("找到了 \(em) 在索引 \(index)")
                                     settings.score = abc.rank[index].score
-                                    abcc.name = abc.rank[index].name
-                                    abcc.score = abc.rank[index].score
-                                    abcc.id = abc.rank[index].id
-                                    abcc.email = abc.rank[index].email
-                                    abcc.password = abc.rank[index].password
-                                    abcc.bgm = abc.rank[index].bgm
-                                    saveSet()
+                                    viewModel.abcc.name = abc.rank[index].name
+                                    viewModel.abcc.score = abc.rank[index].score
+                                    viewModel.abcc.id = abc.rank[index].id
+                                    viewModel.abcc.email = abc.rank[index].email
+                                    viewModel.abcc.password = abc.rank[index].password
+                                    viewModel.abcc.bgm = abc.rank[index].bgm
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
                                 }
-                                saveSet()
+                                do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
                             }
                             
-                            showAlert.toggle()
-                            loginSuccess = true
-                            log = loginSuccess
+                            viewModel.showAlert.toggle()
+                            viewModel.loginSuccess = true
+                            log = viewModel.loginSuccess
                         }
                     }
-                    .alert(isPresented: $showAlert) {
+                    .alert(isPresented: $viewModel.showAlert) {
                         Alert(
-                            title: Text(loginSuccess ? " 登入成功！\n歡迎回來" : "登入失敗！")
+                            title: Text(viewModel.loginSuccess ? " 登入成功！\n歡迎回來" : "登入失敗！")
                             ,dismissButton: .cancel(Text("確認")) {goLogin.toggle()}
                         )
                     }

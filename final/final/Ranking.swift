@@ -12,7 +12,8 @@ import FirebaseFirestoreSwift
 struct Ranking: View {
     @EnvironmentObject var settings : UserSettings
     @Binding var goRank:Bool
-    @State var rk = Rk(rank:[])
+    @State private var viewModel = rankVM()
+    
     var body: some View {
         ZStack{
             Image("b3")
@@ -29,7 +30,7 @@ struct Ranking: View {
                                 Text(settings.lang == 0 ? "\nRanking" : "\n名次")
                                     .bold()
                                     .padding(settings.lang == 0 ? 0 : 5)
-                                ForEach(rk.rank.indices,id: \.self){i in
+                                ForEach(viewModel.rk.rank.indices,id: \.self){i in
                                     Text("\(i+1)")
                                         .padding(3)
                                 }
@@ -39,8 +40,8 @@ struct Ranking: View {
                                 Text(settings.lang == 0 ? "\nName" : "\n暱稱")
                                     .bold()
                                     .padding(settings.lang == 0 ? 0 : 5)
-                                ForEach(rk.rank.indices,id: \.self){i in
-                                    Text(rk.rank[i].name)
+                                ForEach(viewModel.rk.rank.indices,id: \.self){i in
+                                    Text(viewModel.rk.rank[i].name)
                                         .padding(3)
                                 }
                                 Spacer()
@@ -49,8 +50,8 @@ struct Ranking: View {
                                 Text(settings.lang == 0 ? "\nScore" : "\n分數")
                                     .bold()
                                     .padding(settings.lang == 0 ? 0 : 5)
-                                ForEach(rk.rank.indices,id: \.self){i in
-                                    Text("\(rk.rank[i].score)")
+                                ForEach(viewModel.rk.rank.indices,id: \.self){i in
+                                    Text("\(viewModel.rk.rank[i].score)")
                                         .padding(3)
                                 }
                                 Spacer()
@@ -88,7 +89,7 @@ struct Ranking: View {
             db.collection("排行榜").document("心臟病").addSnapshotListener{snapshot,error in
                 guard let snapshot = snapshot else{return}
                 guard let abcc = try? snapshot.data(as:Rk.self)else{return}
-                rk = abcc
+                viewModel.rk = abcc
             }
         }
     }

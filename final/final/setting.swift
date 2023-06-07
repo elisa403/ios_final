@@ -10,28 +10,13 @@ import FirebaseFirestore
 import FirebaseFirestoreSwift
 import AVFoundation
 
+
+
 struct setting: View {
     @AppStorage("loSettings") var loSettings = Data()
     @EnvironmentObject var settings : UserSettings
     @Binding var goSet:Bool
-    @State var abcc = loUserSettings()
-    @State var music = true
-    
-    func saveSet(){
-        do {
-        loSettings = try JSONEncoder().encode(abcc)
-        } catch {
-        print(error)
-        }
-    }
-    func loadSet(){
-        guard !loSettings.isEmpty else { return }
-        do {
-        abcc = try JSONDecoder().decode(loUserSettings.self, from: loSettings)
-        } catch {
-        print(error)
-        }
-    }
+    @State private var viewModel = settingViewModel()
     
     var body: some View {
         VStack{
@@ -45,7 +30,7 @@ struct setting: View {
                         .font(.title)
                         .foregroundColor(Color.white)
                     VStack{
-                        Text(abcc.lang == 0 ? "Music: " : "音樂:")
+                        Text(viewModel.abcc.lang == 0 ? "Music: " : "音樂:")
                             .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
                             .bold()
                             .fontWeight(.bold)
@@ -57,13 +42,14 @@ struct setting: View {
                                 .fontWeight(.bold)
                                 .font(.title)
                                 .frame(width: 100,height: 50)
-                                .background(abcc.bgm == 0 ? Color.white : (abcc.bgm == 1 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white))
+                                .background(viewModel.abcc.bgm == 0 ? Color.white : (viewModel.abcc.bgm == 1 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white))
                                 .cornerRadius(40)
                                 .onTapGesture {
-                                    music = true
+                                    viewModel.music = true
                                     settings.bgm = 1
-                                    abcc.bgm = 1
-                                    saveSet()
+                                    viewModel.abcc.bgm = 1
+                                    
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
                                     
                                     let db = Firestore.firestore()
                                         let documentReference =
@@ -100,13 +86,15 @@ struct setting: View {
                                 .fontWeight(.bold)
                                 .font(.title)
                                 .frame(width: 100,height: 50)
-                                .background(abcc.bgm == 0 ? Color.white : (abcc.bgm == 2 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white))
+                                .background(viewModel.abcc.bgm == 0 ? Color.white : (viewModel.abcc.bgm == 2 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white))
                                 .cornerRadius(40)
                                 .onTapGesture {
-                                    music = true
+                                    viewModel.music = true
                                     settings.bgm = 2
-                                    abcc.bgm = 2
-                                    saveSet()
+                                    viewModel.abcc.bgm = 2
+                                    
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
+                                    
                                     let db = Firestore.firestore()
                                         let documentReference =
                                     db.collection("排行榜").document("心臟病")
@@ -146,13 +134,15 @@ struct setting: View {
                                 .fontWeight(.bold)
                                 .font(.title)
                                 .frame(width: 100,height: 50)
-                                .background(abcc.bgm == 0 ? Color.white : (abcc.bgm == 3 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white))
+                                .background(viewModel.abcc.bgm == 0 ? Color.white : (viewModel.abcc.bgm == 3 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white))
                                 .cornerRadius(40)
                                 .onTapGesture {
-                                    music = true
+                                    viewModel.music = true
                                     settings.bgm = 3
-                                    abcc.bgm = 3
-                                    saveSet()
+                                    viewModel.abcc.bgm = 3
+                                    
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
+                                    
                                     let db = Firestore.firestore()
                                         let documentReference =
                                     db.collection("排行榜").document("心臟病")
@@ -189,13 +179,14 @@ struct setting: View {
                                 .fontWeight(.bold)
                                 .font(.title)
                                 .frame(width: 100,height: 50)
-                                .background(abcc.bgm != 0 ? Color.white : Color(red: 0.841, green: 0.936, blue: 0.965))
+                                .background(viewModel.abcc.bgm != 0 ? Color.white : Color(red: 0.841, green: 0.936, blue: 0.965))
                                 .cornerRadius(40)
                                 .onTapGesture {
-                                    music = false
+                                    viewModel.music = false
                                     settings.bgm = 0
-                                    abcc.bgm = 0
-                                    saveSet()
+                                    viewModel.abcc.bgm = 0
+                                    
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
                                     
                                     let db = Firestore.firestore()
                                         let documentReference =
@@ -227,7 +218,7 @@ struct setting: View {
                                         .stroke(Color(red: 0.312, green: 0.495, blue: 0.59), lineWidth: 2.5)
                                 )
                         }
-                        Text(abcc.lang == 0 ? "Language: " : "語言:")
+                        Text(viewModel.abcc.lang == 0 ? "Language: " : "語言:")
                             .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
                             .bold()
                             .fontWeight(.bold)
@@ -239,12 +230,13 @@ struct setting: View {
                                 .fontWeight(.bold)
                                 .font(.title)
                                 .frame(width: 100,height: 50)
-                                .background(abcc.lang == 0 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white)
+                                .background(viewModel.abcc.lang == 0 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white)
                                 .cornerRadius(40)
                                 .onTapGesture {
                                     settings.lang = 0
-                                    abcc.lang = 0
-                                    saveSet()
+                                    viewModel.abcc.lang = 0
+                                    
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
                                     
                                     let db = Firestore.firestore()
                                         let documentReference =
@@ -278,12 +270,14 @@ struct setting: View {
                                 .fontWeight(.bold)
                                 .font(.title)
                                 .frame(width: 100,height: 50)
-                                .background(abcc.lang == 1 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white)
+                                .background(viewModel.abcc.lang == 1 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white)
                                 .cornerRadius(40)
                                 .onTapGesture {
                                     settings.lang = 1
-                                    abcc.lang = 1
-                                    saveSet()
+                                    viewModel.abcc.lang = 1
+                                    
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
+                                    
                                     let db = Firestore.firestore()
                                         let documentReference =
                                     db.collection("排行榜").document("心臟病")
@@ -313,7 +307,7 @@ struct setting: View {
                                 )
                             
                         }
-                        Text(abcc.lang == 0 ? "Sound: " : "音效:")
+                        Text(viewModel.abcc.lang == 0 ? "Sound: " : "音效:")
                             .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
                             .bold()
                             .fontWeight(.bold)
@@ -325,12 +319,13 @@ struct setting: View {
                                 .fontWeight(.bold)
                                 .font(.title)
                                 .frame(width: 100,height: 50)
-                                .background(abcc.sound == 0 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white)
+                                .background(viewModel.abcc.sound == 0 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white)
                                 .cornerRadius(40)
                                 .onTapGesture {
                                     settings.sound = 0
-                                    abcc.sound = 0
-                                    saveSet()
+                                    viewModel.abcc.sound = 0
+                                    
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
                                     
                                     let db = Firestore.firestore()
                                         let documentReference =
@@ -364,12 +359,14 @@ struct setting: View {
                                 .fontWeight(.bold)
                                 .font(.title)
                                 .frame(width: 100,height: 50)
-                                .background(abcc.sound == 1 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white)
+                                .background(viewModel.abcc.sound == 1 ? Color(red: 0.841, green: 0.936, blue: 0.965) : Color.white)
                                 .cornerRadius(40)
                                 .onTapGesture {
                                     settings.sound = 1
-                                    abcc.sound = 1
-                                    saveSet()
+                                    viewModel.abcc.sound = 1
+                                    
+                                    do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
+                                    
                                     let db = Firestore.firestore()
                                         let documentReference =
                                     db.collection("排行榜").document("心臟病")
@@ -399,82 +396,6 @@ struct setting: View {
                                 )
                             
                         }
-//                        HStack{
-//                            Text("Sound effects: ")
-//                                .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
-//                                .bold()
-//                                .fontWeight(.bold)
-//                                .font(.title)
-//                                .frame(width: 200)
-//                            Text("ON")
-//                                .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
-//                                .bold()
-//                                .fontWeight(.bold)
-//                                .font(.title)
-//                                .frame(width: 100,height: 50)
-//                                .background(!soundd ? Color.white : Color(red: 0.841, green: 0.936, blue: 0.965))
-//                                .cornerRadius(40)
-//                                .onTapGesture {
-//                                    soundd = true
-//                                }
-//                                .overlay{
-//                                    RoundedRectangle(cornerRadius: 40)
-//                                        .stroke(Color(red: 0.312, green: 0.495, blue: 0.59), lineWidth: 2.5)
-//                                }
-//                            Text("OFF")
-//                                .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
-//                                .bold()
-//                                .fontWeight(.bold)
-//                                .font(.title)
-//                                .frame(width: 100,height: 50)
-//                                .background(soundd ? Color.white : Color(red: 0.841, green: 0.936, blue: 0.965))
-//                                .cornerRadius(40)
-//                                .onTapGesture {
-//                                    soundd = false
-//                                }
-//                                .overlay{
-//                                    RoundedRectangle(cornerRadius: 40)
-//                                        .stroke(Color(red: 0.312, green: 0.495, blue: 0.59), lineWidth: 2.5)
-//                                }
-//                        }
-//                        HStack{
-//                            Text("Switch style: ")
-//                                .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
-//                                .bold()
-//                                .fontWeight(.bold)
-//                                .font(.title)
-//                                .frame(width: 200)
-//                            Text("1")
-//                                .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
-//                                .bold()
-//                                .fontWeight(.bold)
-//                                .font(.title)
-//                                .frame(width: 100,height: 50)
-//                                .background(style ? Color.white : Color(red: 0.841, green: 0.936, blue: 0.965))
-//                                .cornerRadius(40)
-//                                .onTapGesture {
-//                                    style = false
-//                                }
-//                                .overlay{
-//                                    RoundedRectangle(cornerRadius: 40)
-//                                        .stroke(Color(red: 0.312, green: 0.495, blue: 0.59), lineWidth: 2.5)
-//                                }
-//                            Text("2")
-//                                .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
-//                                .bold()
-//                                .fontWeight(.bold)
-//                                .font(.title)
-//                                .frame(width: 100,height: 50)
-//                                .background(!style ? Color.white : Color(red: 0.841, green: 0.936, blue: 0.965))
-//                                .cornerRadius(40)
-//                                .onTapGesture {
-//                                    style = true
-//                                }
-//                                .overlay{
-//                                    RoundedRectangle(cornerRadius: 40)
-//                                        .stroke(Color(red: 0.312, green: 0.495, blue: 0.59), lineWidth: 2.5)
-//                                }
-//                        }
                     }.frame(width: 230,height: 530)
                         .background(Color.white)
                         .cornerRadius(30)
@@ -503,13 +424,14 @@ struct setting: View {
             }
         }
         .onAppear{
-            loadSet()
-            settings.name = abcc.name
-            settings.score = abcc.score
-            settings.index = abcc.index
-            settings.id = abcc.id
-            settings.email = abcc.email
-            settings.password = abcc.password
+            guard !loSettings.isEmpty else { return }
+            do {viewModel.abcc = try JSONDecoder().decode(loUserSettings.self, from: loSettings)} catch {print(error)}
+            settings.name = viewModel.abcc.name
+            settings.score = viewModel.abcc.score
+            settings.index = viewModel.abcc.index
+            settings.id = viewModel.abcc.id
+            settings.email = viewModel.abcc.email
+            settings.password = viewModel.abcc.password
         }
     }
 }

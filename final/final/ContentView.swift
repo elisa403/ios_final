@@ -11,91 +11,10 @@ import FirebaseFirestore
 import FirebaseFirestoreSwift
 import AVFoundation
 
-extension AVPlayer {
-    static let sharedFlipPlayer: AVPlayer = {
-        guard let url = Bundle.main.url(forResource: "flip", withExtension:
-        "mp3") else { fatalError("Failed to find sound file.") }
-        return AVPlayer(url: url)
-    }()
-    
-    static let sharedWinPlayer: AVPlayer = {
-        guard let url = Bundle.main.url(forResource: "win", withExtension:
-        "mp3") else { fatalError("Failed to find sound file.") }
-        return AVPlayer(url: url)
-    }()
-    
-    static let sharedLosePlayer: AVPlayer = {
-        guard let url = Bundle.main.url(forResource: "lose", withExtension:
-        "mp3") else { fatalError("Failed to find sound file.") }
-        return AVPlayer(url: url)
-    }()
-    static let sharedpaiPlayer: AVPlayer = {
-        guard let url = Bundle.main.url(forResource: "pai", withExtension:
-        "mp3") else { fatalError("Failed to find sound file.") }
-        return AVPlayer(url: url)
-    }()
-    static let sharedbubuPlayer: AVPlayer = {
-        guard let url = Bundle.main.url(forResource: "bubu", withExtension:
-        "mp3") else { fatalError("Failed to find sound file.") }
-        return AVPlayer(url: url)
-    }()
-
-    func playFromStart() {
-        seek(to: .zero)
-        play()
-    }
-    
-    static var bgQueuePlayer = AVQueuePlayer()
-    static var bgPlayerLooper: AVPlayerLooper!
-    static func setupBgMusic3() {
-        guard let url = Bundle.main.url(forResource: "bgm3",
-        withExtension: "mp3") else { fatalError("Failed to find sound file.") }
-        let item = AVPlayerItem(url: url)
-        bgPlayerLooper = AVPlayerLooper(player: bgQueuePlayer, templateItem: item)
-    }
-    static func setupBgMusic1() {
-        guard let url = Bundle.main.url(forResource: "bgm1",
-        withExtension: "mp3") else { fatalError("Failed to find sound file.") }
-        let item = AVPlayerItem(url: url)
-        bgPlayerLooper = AVPlayerLooper(player: bgQueuePlayer, templateItem: item)
-    }
-    static func setupBgMusic2() {
-        guard let url = Bundle.main.url(forResource: "bgm2",
-        withExtension: "mp3") else { fatalError("Failed to find sound file.") }
-        let item = AVPlayerItem(url: url)
-        bgPlayerLooper = AVPlayerLooper(player: bgQueuePlayer, templateItem: item)
-    }
-}
-
 struct ContentView: View {
     @AppStorage("loSettings") var loSettings = Data()
     @StateObject var settings = UserSettings()
-    @State var log = false
-    @State var inputRoom = false
-    @State var goRegister = false
-    @State var goLogin = false
-    @State var openRoom = false
-    @State var abcc = loUserSettings()
-    @State var goRank = false
-    @State var goSet = false
-    @State var enterRoom = false
-    @State var playinfo = playerInfo(name: "", id: UUID(),score: 0,card: [],time: 10000.0)
-    @State var room = "0008"
-    func loadSet(){
-        guard !loSettings.isEmpty else { return }
-        do {
-        abcc = try JSONDecoder().decode(loUserSettings.self, from: loSettings)
-        } catch {
-        print(error)
-        }
-    }
-    func saveSet(){
-        do {
-        loSettings = try JSONEncoder().encode(abcc)
-        } catch {
-        print(error)
-        }
-    }
+    @State private var viewModel = contenViewModel()
     
     var body: some View {
         ZStack{
@@ -112,16 +31,16 @@ struct ContentView: View {
                             .font(.title3)
                             .bold()
                         Button(settings.name == "訪客" ? (settings.lang == 0 ? "Register" : "註冊") : ""){
-                            goRegister.toggle()
+                            viewModel.goRegister.toggle()
                         }
-                        .fullScreenCover(isPresented: $goRegister, content: {register(goRegister:$goRegister,log:$log)})
+                        .fullScreenCover(isPresented: $viewModel.goRegister, content: {register(goRegister:$viewModel.goRegister,log:$viewModel.log)})
                         .environmentObject(settings)
                         .font(.title3)
                         
                         Button(settings.name == "訪客" ? (settings.lang == 0 ? "Login" : "登入") : ""){
-                            goLogin.toggle()
+                            viewModel.goLogin.toggle()
                         }
-                        .fullScreenCover(isPresented: $goLogin, content: {login(goLogin:$goLogin,log:$log)})
+                        .fullScreenCover(isPresented: $viewModel.goLogin, content: {login(goLogin:$viewModel.goLogin,log:$viewModel.log)})
                         .environmentObject(settings)
                         .font(.title3)
                        
@@ -131,13 +50,19 @@ struct ContentView: View {
                             settings.password = ""
                             settings.score = 0
                             settings.id = UUID()
-                            abcc.name = settings.name
-                            abcc.score = settings.score
-                            abcc.id = settings.id
-                            abcc.email = settings.email
-                            abcc.password = settings.password
-                            saveSet()
-                            log = false
+                            viewModel.abcc.name = settings.name
+                            viewModel.abcc.score = settings.score
+                            viewModel.abcc.id = settings.id
+                            viewModel.abcc.email = settings.email
+                            viewModel.abcc.password = settings.password
+                            
+                            do {
+                                loSettings = try JSONEncoder().encode(viewModel.abcc)
+                            } catch {
+                            print(error)
+                            }
+                            
+                            viewModel.log = false
                         }
                         .font(.title3)
                     }
@@ -167,9 +92,9 @@ struct ContentView: View {
                     
                     HStack{
                         Button(settings.lang == 0 ? "Ranking" : "查看排行"){
-                            goRank.toggle()
+                            viewModel.goRank.toggle()
                         }
-                        .sheet(isPresented: $goRank, content: {Ranking(goRank:$goRank)})
+                        .sheet(isPresented: $viewModel.goRank, content: {Ranking(goRank:$viewModel.goRank)})
                         .environmentObject(settings)
                         .font(.title3)
                         .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
@@ -184,9 +109,9 @@ struct ContentView: View {
                         )
                         
                         Button(settings.lang == 0 ? "Settings" : "遊戲設定"){
-                            goSet.toggle()
+                            viewModel.goSet.toggle()
                         }
-                        .sheet(isPresented: $goSet, content: {setting(goSet:$goSet)})
+                        .sheet(isPresented: $viewModel.goSet, content: {setting(goSet:$viewModel.goSet)})
                         .environmentObject(settings)
                         .font(.title3)
                         .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
@@ -232,18 +157,24 @@ struct ContentView: View {
     //                .environmentObject(settings)
                     
                     Button(settings.lang == 0 ? "Input Room Number" : "輸入遊戲房間"){
-                        if(abcc.name == ""){
-                            abcc.name = settings.name
-                            abcc.score = settings.score
-                            abcc.index = settings.index
-                            abcc.id = settings.id
-                            abcc.email = settings.email
-                            abcc.password = settings.password
+                        if(viewModel.abcc.name == ""){
+                            viewModel.abcc.name = settings.name
+                            viewModel.abcc.score = settings.score
+                            viewModel.abcc.index = settings.index
+                            viewModel.abcc.id = settings.id
+                            viewModel.abcc.email = settings.email
+                            viewModel.abcc.password = settings.password
                         }
-                        saveSet()
-                        inputRoom.toggle()
+                        
+                        do {
+                            loSettings = try JSONEncoder().encode(viewModel.abcc)
+                        } catch {
+                        print(error)
+                        }
+                        
+                        viewModel.inputRoom.toggle()
                     }
-                    .sheet(isPresented: $inputRoom, content: {roomInput(inputRoom:$inputRoom,loSettings: $loSettings)})
+                    .sheet(isPresented: $viewModel.inputRoom, content: {roomInput(inputRoom:$viewModel.inputRoom,loSettings: $loSettings)})
                     .environmentObject(settings)
                     .font(.title3)
                     .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
@@ -257,9 +188,9 @@ struct ContentView: View {
                             .stroke(Color.white, lineWidth: 2.5)
                     )
                     Button(settings.lang == 0 ? "Open New Room" : "開啟新房間"){
-                        openRoom.toggle()
+                        viewModel.openRoom.toggle()
                     }
-                    .sheet(isPresented: $openRoom, content: {roomOpen(openRoom:$openRoom)})
+                    .sheet(isPresented: $viewModel.openRoom, content: {roomOpen(openRoom:$viewModel.openRoom)})
                     .environmentObject(settings)
                     .font(.title3)
                     .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
@@ -282,21 +213,26 @@ struct ContentView: View {
             .foregroundColor(Color.white)
         }
         .onAppear{
-            loadSet()
-            settings.name = abcc.name
-            settings.score = abcc.score
-            settings.index = abcc.index
-            settings.id = abcc.id
-            settings.email = abcc.email
-            settings.password = abcc.password
-            settings.bgm = abcc.bgm
-            settings.lang = abcc.lang
-            if(abcc.bgm != 0){
-                if(abcc.bgm == 1){
+            guard !loSettings.isEmpty else { return }
+            do {
+                viewModel.abcc = try JSONDecoder().decode(loUserSettings.self, from: loSettings)
+            } catch {
+            print(error)
+            }
+            settings.name = viewModel.abcc.name
+            settings.score = viewModel.abcc.score
+            settings.index = viewModel.abcc.index
+            settings.id = viewModel.abcc.id
+            settings.email = viewModel.abcc.email
+            settings.password = viewModel.abcc.password
+            settings.bgm = viewModel.abcc.bgm
+            settings.lang = viewModel.abcc.lang
+            if(viewModel.abcc.bgm != 0){
+                if(viewModel.abcc.bgm == 1){
                     AVPlayer.setupBgMusic1()
                     AVPlayer.bgQueuePlayer.play()
                 }
-                else if(abcc.bgm == 2){
+                else if(viewModel.abcc.bgm == 2){
                     AVPlayer.setupBgMusic2()
                     AVPlayer.bgQueuePlayer.play()
                 }

@@ -14,40 +14,7 @@ struct roomInput: View {
     @EnvironmentObject var settings : UserSettings
     @Binding var inputRoom:Bool
     @Binding var loSettings:Data
-    @State var room = "0000"
-    @State var enterRoom = false
-    @State var showAlert = false
-    @State var playinfo = playerInfo(name: "", id: UUID(),score: 0,card: [],time: 10000.0)
-    @State var now = gameStruct(enter:false,quit: false,player: [],score: [], people: 0, card: 0,cardpool: [""],nowTurn: 0,cardpoolNum: 0,playing: false,hit: false,losePlayer: [],timmer: false,showAlert1: false,endGame: false)
-    @State var abcc = loUserSettings()
-    
-    func saveSet(){
-        do {
-        loSettings = try JSONEncoder().encode(abcc)
-        } catch {
-        print(error)
-        }
-    }
-    func loadSet(){
-        guard !loSettings.isEmpty else { return }
-        do {
-        abcc = try JSONDecoder().decode(loUserSettings.self, from: loSettings)
-        } catch {
-        print(error)
-        }
-    }
-    
-    func createabc(){
-        let db = Firestore.firestore()
-        
-        do{
-            try
-                db.collection(room).document("牌").setData(from: now)
-//            print("success")
-        }catch{
-            print(error)
-        }
-    }
+    @State private var viewModel = roomInputViewModel()
     
     var body: some View {
         ZStack{
@@ -72,7 +39,7 @@ struct roomInput: View {
                 }
             }
             VStack{
-                TextField(settings.lang == 0 ? "Room Number" : "房間號碼", text: $room)
+                TextField(settings.lang == 0 ? "Room Number" : "房間號碼", text: $viewModel.room)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
                     .multilineTextAlignment(.center)
@@ -81,7 +48,7 @@ struct roomInput: View {
                 Button(settings.lang == 0 ? "Enter" : "進入"){
                     let db = Firestore.firestore()
                         let documentReference =
-                        db.collection(room).document("牌")
+                    db.collection(viewModel.room).document("牌")
                         documentReference.getDocument { document, error in
                             guard let document,
                                   document.exists,
@@ -89,14 +56,16 @@ struct roomInput: View {
                             else {
                                 return
                             }
-                            playinfo.id = settings.id
-                            playinfo.name = settings.name
-                            playinfo.score = settings.score
-                            abc.player += [playinfo]
+                            viewModel.playinfo.id = settings.id
+                            viewModel.playinfo.name = settings.name
+                            viewModel.playinfo.score = settings.score
+                            abc.player += [viewModel.playinfo]
                             if(!abc.playing){
                                 settings.index = abc.player.count-1
-                                abcc.index = abc.player.count-1
-                                saveSet()
+                                viewModel.abcc.index = abc.player.count-1
+                                
+                                do {loSettings = try JSONEncoder().encode(viewModel.abcc)} catch {print(error)}
+                                
                                 do {
                                     try documentReference.setData(from: abc)
                                 } catch {
@@ -105,11 +74,11 @@ struct roomInput: View {
                             }
                         }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){
-                        enterRoom.toggle()
+                        viewModel.enterRoom.toggle()
                     }
                     
                 }
-                .fullScreenCover(isPresented: $enterRoom, content: {waitingRoom(enterRoom: $enterRoom,room: $room)})
+                .fullScreenCover(isPresented: $viewModel.enterRoom, content: {waitingRoom(enterRoom: $viewModel.enterRoom,room: $viewModel.room)})
                 .environmentObject(settings)
                 .font(.title)
                 .foregroundColor(Color(red: 0.312, green: 0.495, blue: 0.59))
@@ -128,7 +97,12 @@ struct roomInput: View {
             }
         }
         .onAppear{
-            loadSet()
+            guard !loSettings.isEmpty else { return }
+            do {
+                viewModel.abcc = try JSONDecoder().decode(loUserSettings.self, from: loSettings)
+            } catch {
+            print(error)
+            }
         }
     }
 }
